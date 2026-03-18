@@ -1,0 +1,11 @@
+services:
+  daily-brief-bot:
+    build: .
+    container_name: daily-brief-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - TZ=Asia/Seoul
+    # Override command for one-shot execution:
+    # docker compose run --rm daily-brief-bot python -m src.main --now
