@@ -30,7 +30,7 @@ def setup_logging(verbose: bool = False) -> None:
     )
     # Quiet noisy libraries
     logging.getLogger("httpx").setLevel(logging.WARNING)
-    logging.getLogger("openai").setLevel(logging.WARNING)
+    logging.getLogger("anthropic").setLevel(logging.WARNING)
     logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 
@@ -131,7 +131,7 @@ def main() -> None:
         "Config loaded — send_time=%s, timezone=%s, model=%s",
         config.send_time,
         config.timezone,
-        config.openai_model,
+        config.anthropic_model,
     )
 
     # Test mode

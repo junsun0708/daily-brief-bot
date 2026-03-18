@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 from dotenv import load_dotenv
 
 
 def _find_env_file() -> Path | None:
-    """Walk up from CWD to find .env file."""
     current = Path.cwd()
     for parent in [current, *current.parents]:
         env_path = parent / ".env"
@@ -19,19 +18,12 @@ def _find_env_file() -> Path | None:
 
 @dataclass(frozen=True)
 class Config:
-    # Slack
     slack_bot_token: str
     slack_channel_id: str
-
-    # OpenAI
-    openai_api_key: str
-    openai_model: str = "gpt-4o-mini"
-
-    # Schedule
-    send_time: str = "08:00"  # HH:MM format
+    anthropic_api_key: str
+    anthropic_model: str = "claude-sonnet-4-20250514"
+    send_time: str = "08:00"
     timezone: str = "Asia/Seoul"
-
-    # Optional
     news_api_key: str | None = None
 
     @property
@@ -44,22 +36,21 @@ class Config:
 
 
 def load_config() -> Config:
-    """Load configuration from environment variables."""
     env_file = _find_env_file()
     if env_file:
         load_dotenv(env_file)
 
     slack_bot_token = os.environ.get("SLACK_BOT_TOKEN", "")
     slack_channel_id = os.environ.get("SLACK_CHANNEL_ID", "")
-    openai_api_key = os.environ.get("OPENAI_API_KEY", "")
+    anthropic_api_key = os.environ.get("ANTHROPIC_API_KEY", "")
 
     missing: list[str] = []
     if not slack_bot_token:
         missing.append("SLACK_BOT_TOKEN")
     if not slack_channel_id:
         missing.append("SLACK_CHANNEL_ID")
-    if not openai_api_key:
-        missing.append("OPENAI_API_KEY")
+    if not anthropic_api_key:
+        missing.append("ANTHROPIC_API_KEY")
 
     if missing:
         raise EnvironmentError(
@@ -70,8 +61,8 @@ def load_config() -> Config:
     return Config(
         slack_bot_token=slack_bot_token,
         slack_channel_id=slack_channel_id,
-        openai_api_key=openai_api_key,
-        openai_model=os.environ.get("OPENAI_MODEL", "gpt-4o-mini"),
+        anthropic_api_key=anthropic_api_key,
+        anthropic_model=os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-20250514"),
         send_time=os.environ.get("SEND_TIME", "08:00"),
         timezone=os.environ.get("TIMEZONE", "Asia/Seoul"),
         news_api_key=os.environ.get("NEWS_API_KEY"),
