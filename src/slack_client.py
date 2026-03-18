@@ -65,21 +65,29 @@ class SlackBriefingClient:
             is_private = channel.get("is_private", False)
             is_member = channel.get("is_member", False)
 
+            if not is_private:
+                logger.error(
+                    "Channel #%s (%s) is PUBLIC. "
+                    "This bot is configured to send to a PRIVATE channel only. "
+                    "Please set SLACK_CHANNEL_ID to a private channel.",
+                    channel_name,
+                    self._channel_id,
+                )
+                return False
+
             if not is_member:
                 logger.error(
-                    "Bot is NOT a member of channel #%s (%s). "
+                    "Bot is NOT a member of private channel #%s (%s). "
                     "Please invite the bot to the channel first.",
                     channel_name,
                     self._channel_id,
                 )
                 return False
 
-            privacy = "private" if is_private else "public"
             logger.info(
-                "Channel validated — #%s (%s, %s, member=True)",
+                "Channel validated — #%s (%s, private, member=True)",
                 channel_name,
                 self._channel_id,
-                privacy,
             )
             return True
         except SlackApiError as e:
