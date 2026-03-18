@@ -72,6 +72,11 @@ def run_briefing(config: Config, dry_run: bool = False) -> bool:
 
         logger.info("Sending to Slack...")
         client = SlackBriefingClient(config)
+
+        if not client.validate_channel():
+            logger.error("Channel validation failed — aborting send")
+            return False
+
         success = client.send_message(payload)
 
         if success:
