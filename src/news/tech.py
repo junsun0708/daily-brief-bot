@@ -14,6 +14,8 @@ logger = logging.getLogger(__name__)
 HN_TOP_STORIES_URL = "https://hacker-news.firebaseio.com/v0/topstories.json"
 HN_ITEM_URL = "https://hacker-news.firebaseio.com/v0/item/{}.json"
 
+FEED_USER_AGENT = "DailyBriefBot/1.0 (+https://github.com/daily-brief-bot)"
+
 TECH_RSS_FEEDS: list[dict[str, str]] = [
     {"name": "TechCrunch", "url": "https://techcrunch.com/feed/"},
     {"name": "The Verge", "url": "https://www.theverge.com/rss/index.xml"},
@@ -68,7 +70,10 @@ def _fetch_tech_rss(max_per_source: int = 5) -> list[NewsItem]:
 
     for feed_info in TECH_RSS_FEEDS:
         try:
-            feed = feedparser.parse(feed_info["url"])
+            feed = feedparser.parse(
+                feed_info["url"],
+                request_headers={"User-Agent": FEED_USER_AGENT},
+            )
             for entry in feed.entries[:max_per_source]:
                 summary = entry.get("summary", entry.get("description", ""))
                 if "<" in summary:

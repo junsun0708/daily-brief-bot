@@ -12,10 +12,19 @@ def _header_block(text: str) -> dict:
     }
 
 
+SLACK_SECTION_TEXT_LIMIT = 3000
+
+
+def _truncate(text: str, limit: int = SLACK_SECTION_TEXT_LIMIT) -> str:
+    if len(text) <= limit:
+        return text
+    return text[: limit - 3] + "..."
+
+
 def _section_block(text: str) -> dict:
     return {
         "type": "section",
-        "text": {"type": "mrkdwn", "text": text},
+        "text": {"type": "mrkdwn", "text": _truncate(text)},
     }
 
 

@@ -34,40 +34,56 @@ def setup_logging(verbose: bool = False) -> None:
     logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 
-def run_briefing(config: Config) -> bool:
-    """Execute a single briefing cycle: fetch → generate → format → send.
+def run_briefing(config: Config, dry_run: bool = False) -> bool:
+    """Execute a single briefing cycle: fetch → generate → format → send."""
+    logger.info("=== Starting briefing cycle %s===", "(DRY RUN) " if dry_run else "")
 
-    Returns True if briefing was sent successfully.
-    """
-    logger.info("=== Starting briefing cycle ===")
+    try:
+        logger.info("Fetching news from all sources...")
+        news_batches = fetch_all_news()
+        total_items = sum(len(batch.items) for batch in news_batches.values())
+        logger.info("Fetched %d total news items across %d categories", total_items, len(news_batches))
 
-    # 1. Fetch news
-    logger.info("Fetching news from all sources...")
-    news_batches = fetch_all_news()
-    total_items = sum(len(batch.items) for batch in news_batches.values())
-    logger.info("Fetched %d total news items across %d categories", total_items, len(news_batches))
+        logger.info("Generating briefing content...")
+        generator = BriefingGenerator(config)
+        now = datetime.now(ZoneInfo(config.timezone))
+        content = generator.generate_briefing(news_batches, now=now)
 
-    # 2. Generate briefing content via LLM
-    logger.info("Generating briefing content...")
-    generator = BriefingGenerator(config)
-    now = datetime.now(ZoneInfo(config.timezone))
-    content = generator.generate_briefing(news_batches, now=now)
+        logger.info("Formatting message...")
+        payload = format_briefing(content)
 
-    # 3. Format for Slack
-    logger.info("Formatting message...")
-    payload = format_briefing(content)
+        if dry_run:
+            import json
+            print("\n" + "=" * 60)
+            print("DRY RUN — Slack message payload:")
+            print("=" * 60)
+            for block in payload["blocks"]:
+                if block["type"] == "header":
+                    print(f"\n### {block['text']['text']}")
+                elif block["type"] == "section":
+                    print(block["text"]["text"])
+                elif block["type"] == "divider":
+                    print("-" * 40)
+                elif block["type"] == "context":
+                    print(f"  {block['elements'][0]['text']}")
+            print("=" * 60)
+            logger.info("=== Dry run complete ===")
+            return True
 
-    # 4. Send to Slack
-    logger.info("Sending to Slack...")
-    client = SlackBriefingClient(config)
-    success = client.send_message(payload)
+        logger.info("Sending to Slack...")
+        client = SlackBriefingClient(config)
+        success = client.send_message(payload)
 
-    if success:
-        logger.info("=== Briefing sent successfully! ===")
-    else:
-        logger.error("=== Failed to send briefing ===")
+        if success:
+            logger.info("=== Briefing sent successfully! ===")
+        else:
+            logger.error("=== Failed to send briefing ===")
 
-    return success
+        return success
+
+    except Exception:
+        logger.exception("Briefing cycle failed with unexpected error")
+        return False
 
 
 def main() -> None:
@@ -84,6 +100,11 @@ def main() -> None:
         "--test",
         action="store_true",
         help="Slack 연결 테스트만 실행합니다",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="브리핑을 생성하되 Slack 발송 없이 터미널에 출력합니다",
     )
     parser.add_argument(
         "--verbose", "-v",
@@ -118,7 +139,10 @@ def main() -> None:
             logger.error("❌ Slack connection test failed!")
             sys.exit(1)
 
-    # Immediate execution
+    if args.dry_run:
+        success = run_briefing(config, dry_run=True)
+        sys.exit(0 if success else 1)
+
     if args.now:
         success = run_briefing(config)
         sys.exit(0 if success else 1)

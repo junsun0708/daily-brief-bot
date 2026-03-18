@@ -19,6 +19,9 @@ KOREAN_RSS_FEEDS: list[dict[str, str]] = [
     {"name": "KBS뉴스", "url": "https://news.kbs.co.kr/api/getRss.html?rss_id=headline"},
 ]
 
+FEED_REQUEST_TIMEOUT = 15
+FEED_USER_AGENT = "DailyBriefBot/1.0 (+https://github.com/daily-brief-bot)"
+
 
 def _parse_published(entry: dict) -> datetime | None:
     """Extract publication date from an RSS entry."""
@@ -38,7 +41,10 @@ def fetch_korean_news(max_per_source: int = 5) -> list[NewsItem]:
 
     for feed_info in KOREAN_RSS_FEEDS:
         try:
-            feed = feedparser.parse(feed_info["url"])
+            feed = feedparser.parse(
+                feed_info["url"],
+                request_headers={"User-Agent": FEED_USER_AGENT},
+            )
             for entry in feed.entries[:max_per_source]:
                 summary = entry.get("summary", entry.get("description", ""))
                 # Strip HTML tags from summary

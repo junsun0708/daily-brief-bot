@@ -14,9 +14,12 @@ logger = logging.getLogger(__name__)
 WORLD_RSS_FEEDS: list[dict[str, str]] = [
     {"name": "BBC World", "url": "https://feeds.bbci.co.uk/news/world/rss.xml"},
     {"name": "Reuters", "url": "https://www.reutersagency.com/feed/?taxonomy=best-sectors&post_type=best"},
-    {"name": "AP News", "url": "https://rsshub.app/apnews/topics/apf-topnews"},
+    {"name": "NPR World", "url": "https://feeds.npr.org/1004/rss.xml"},
     {"name": "Al Jazeera", "url": "https://www.aljazeera.com/xml/rss/all.xml"},
 ]
+
+FEED_REQUEST_TIMEOUT = 15
+FEED_USER_AGENT = "DailyBriefBot/1.0 (+https://github.com/daily-brief-bot)"
 
 
 def _parse_published(entry: dict) -> datetime | None:
@@ -36,7 +39,10 @@ def fetch_world_news(max_per_source: int = 5) -> list[NewsItem]:
 
     for feed_info in WORLD_RSS_FEEDS:
         try:
-            feed = feedparser.parse(feed_info["url"])
+            feed = feedparser.parse(
+                feed_info["url"],
+                request_headers={"User-Agent": FEED_USER_AGENT},
+            )
             for entry in feed.entries[:max_per_source]:
                 summary = entry.get("summary", entry.get("description", ""))
                 if "<" in summary:
