@@ -43,20 +43,25 @@ NEWS_SUMMARY_PROMPT = """다음은 오늘의 {category_name} 뉴스 목록입니
 - 중요도 순으로 정렬
 - 원문 URL이 있으면 괄호 안에 포함
 - 한국어로 작성 (영문 뉴스도 번역)
+- JSON이나 코드블록 없이 일반 텍스트로만 응답
 
 뉴스 목록:
 {news_items}"""
 
 
-DAILY_TOPIC_PROMPT = """오늘은 {date}입니다.
-오늘 날짜에 맞는 재미있는 일상 주제를 하나 만들어주세요.
+DAILY_TOPIC_PROMPT = """다음은 오늘의 랭킹뉴스, 국내뉴스, 세계뉴스 목록입니다.
+이 뉴스들을 참고해서 스몰토크 주제를 만들어주세요.
 
 규칙:
-- 계절, 날짜, 요일 등을 고려
-- 가볍고 긍정적인 주제
-- 2~3문장으로 작성
-- 직장인이 공감할 수 있는 내용
-- 적절한 이모지 사용"""
+- 뉴스 내용과 관련된 재미있는 대화 주제를 3개 만들어주세요
+- 각 주제는 1~2문장으로 작성
+- 질문 형태로 끝나면 좋음
+- 직장인이 공감하고 나눌 수 있는 주제
+- 적절한 이모지 사용
+- JSON이나 코드블록 없이 일반 텍스트로만 응답
+
+뉴스 목록:
+{news_items}"""
 
 
 SMALL_TALK_PROMPT = """오늘은 {date}입니다.
@@ -67,7 +72,8 @@ SMALL_TALK_PROMPT = """오늘은 {date}입니다.
 - 질문 형태로 끝나면 좋음
 - 2~3문장
 - 너무 개인적이지 않은 주제
-- 적절한 이모지 사용"""
+- 적절한 이모지 사용
+- JSON이나 코드블록 없이 일반 텍스트로만 응답"""
 
 
 GREETING_PROMPT = """오늘은 {date} ({weekday})입니다.
@@ -77,7 +83,8 @@ GREETING_PROMPT = """오늘은 {date} ({weekday})입니다.
 - 1~2문장
 - 요일/날씨/계절감을 반영
 - 밝고 긍정적인 톤
-- 이모지 1~2개 사용"""
+- 이모지 1~2개 사용
+- JSON이나 코드블록 없이 일반 텍스트로만 응답"""
 
 
 WEEKDAY_NAMES = {
@@ -137,6 +144,13 @@ Respond with JSON only in this format:
                 return "Claude CLI 오류가 발생했습니다."
             
             output = result.stdout.strip()
+            
+            # JSON 코드블록 제거
+            if "```json" in output:
+                output = output.split("```json")[1].split("```")[0]
+            elif "```" in output:
+                output = output.split("```")[1].split("```")[0]
+            
             try:
                 parsed = json.loads(output)
                 result_data = parsed.get("result", "")
@@ -184,10 +198,22 @@ Respond with JSON only in this format:
         )
         return self._chat(prompt)
 
-    def generate_daily_topic(self, date: datetime) -> str:
-        date_str = date.strftime("%Y년 %m월 %d일")
-        weekday = WEEKDAY_NAMES[date.weekday()]
-        return self._chat(DAILY_TOPIC_PROMPT.format(date=f"{date_str} {weekday}"))
+    def generate_daily_topic(
+        self,
+        ranking_batch: NewsBatch,
+        korean_batch: NewsBatch,
+        world_batch: NewsBatch,
+    ) -> str:
+        combined_news = []
+        combined_news.extend(ranking_batch.top(3))
+        combined_news.extend(korean_batch.top(3))
+        combined_news.extend(world_batch.top(3))
+        
+        news_items = _format_news_for_prompt(
+            NewsBatch(category=NewsCategory.KOREAN, items=combined_news),
+            max_items=9
+        )
+        return self._chat(DAILY_TOPIC_PROMPT.format(news_items=news_items))
 
     def generate_small_talk(self, date: datetime) -> str:
         date_str = date.strftime("%Y년 %m월 %d일")
@@ -212,13 +238,18 @@ Respond with JSON only in this format:
         logger.info("Generating briefing for %s", date_str)
 
         news_summaries: dict[NewsCategory, str] = {}
-        for category in [NewsCategory.KOREAN, NewsCategory.WORLD, NewsCategory.TECH]:
+        for category in [NewsCategory.KOREAN, NewsCategory.WORLD, NewsCategory.TECH, NewsCategory.RANKING]:
             batch = news_batches.get(category, NewsBatch(category=category))
             news_summaries[category] = self.summarize_news(batch)
             logger.info("Summarized %s", category.display_name)
 
         greeting = self.generate_greeting(now)
-        daily_topic = self.generate_daily_topic(now)
+        
+        ranking_batch = news_batches.get(NewsCategory.RANKING, NewsBatch(category=NewsCategory.RANKING))
+        korean_batch = news_batches.get(NewsCategory.KOREAN, NewsBatch(category=NewsCategory.KOREAN))
+        world_batch = news_batches.get(NewsCategory.WORLD, NewsBatch(category=NewsCategory.WORLD))
+        daily_topic = self.generate_daily_topic(ranking_batch, korean_batch, world_batch)
+        
         small_talk = self.generate_small_talk(now)
 
         logger.info("Briefing generation complete")
