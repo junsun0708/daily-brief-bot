@@ -238,10 +238,11 @@ Respond with JSON only in this format:
         logger.info("Generating briefing for %s", date_str)
 
         news_summaries: dict[NewsCategory, str] = {}
-        for category in [NewsCategory.KOREAN, NewsCategory.WORLD, NewsCategory.TECH, NewsCategory.RANKING]:
+        for category in [NewsCategory.KOREAN, NewsCategory.WORLD, NewsCategory.TECH, NewsCategory.RANKING, NewsCategory.SOCIAL]:
             batch = news_batches.get(category, NewsBatch(category=category))
-            news_summaries[category] = self.summarize_news(batch)
-            logger.info("Summarized %s", category.display_name)
+            if batch.items:
+                news_summaries[category] = self.summarize_news(batch)
+                logger.info("Summarized %s", category.display_name)
 
         greeting = self.generate_greeting(now)
         

@@ -10,6 +10,7 @@ class NewsCategory(str, Enum):
     WORLD = "world"         # 세계뉴스
     TECH = "tech"           # IT뉴스
     RANKING = "ranking"     # 랭킹뉴스
+    SOCIAL = "social"       # 소셜 미디어/커뮤니티
 
     @property
     def display_name(self) -> str:
@@ -18,6 +19,7 @@ class NewsCategory(str, Enum):
             "world": "🌍 세계뉴스",
             "tech": "💻 IT뉴스",
             "ranking": "🔥 랭킹뉴스",
+            "social": "💬 소셜/커뮤니티",
         }
         return names[self.value]
 

@@ -55,7 +55,7 @@ def format_briefing(content: BriefingContent) -> dict:
     blocks.append(_divider())
 
     # News sections
-    category_order = [NewsCategory.KOREAN, NewsCategory.WORLD, NewsCategory.TECH]
+    category_order = [NewsCategory.KOREAN, NewsCategory.WORLD, NewsCategory.TECH, NewsCategory.RANKING, NewsCategory.SOCIAL]
     for category in category_order:
         summary = content.news_summaries.get(category, "뉴스를 불러오지 못했어요.")
         blocks.append(_section_block(f"*{category.display_name}*"))

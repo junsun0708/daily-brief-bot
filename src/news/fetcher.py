@@ -9,6 +9,7 @@ from src.news.korean import fetch_korean_news
 from src.news.world import fetch_world_news
 from src.news.tech import fetch_tech_news
 from src.news.ranking import fetch_ranking_news
+from src.news.social import fetch_social_posts
 
 logger = logging.getLogger(__name__)
 
@@ -46,5 +47,14 @@ def fetch_all_news() -> dict[NewsCategory, NewsBatch]:
             except Exception:
                 logger.error("Failed to fetch %s", category.value, exc_info=True)
                 results[category] = NewsBatch(category=category, items=[])
+    
+    # Fetch social posts (Reddit, Twitter, Facebook + Korean communities) - 별도 카테고리로
+    try:
+        social_items = fetch_social_posts(max_items=25)  # 각 소스당 5개씩
+        results[NewsCategory.SOCIAL] = NewsBatch(category=NewsCategory.SOCIAL, items=social_items)
+        logger.info("Fetched %d social posts", len(social_items))
+    except Exception:
+        logger.warning("Failed to fetch social posts", exc_info=True)
+        results[NewsCategory.SOCIAL] = NewsBatch(category=NewsCategory.SOCIAL, items=[])
 
     return results
