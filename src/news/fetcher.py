@@ -8,6 +8,7 @@ from src.news.base import NewsBatch, NewsCategory
 from src.news.korean import fetch_korean_news
 from src.news.world import fetch_world_news
 from src.news.tech import fetch_tech_news
+from src.news.ranking import fetch_ranking_news
 
 logger = logging.getLogger(__name__)
 
@@ -21,11 +22,12 @@ def fetch_all_news() -> dict[NewsCategory, NewsBatch]:
         NewsCategory.KOREAN: fetch_korean_news,
         NewsCategory.WORLD: fetch_world_news,
         NewsCategory.TECH: fetch_tech_news,
+        NewsCategory.RANKING: fetch_ranking_news,
     }
 
     results: dict[NewsCategory, NewsBatch] = {}
 
-    with ThreadPoolExecutor(max_workers=3) as executor:
+    with ThreadPoolExecutor(max_workers=4) as executor:
         future_to_category = {
             executor.submit(fn): category
             for category, fn in fetchers.items()
