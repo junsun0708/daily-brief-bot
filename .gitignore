@@ -29,3 +29,7 @@ Thumbs.db
 # Logs
 *.log
 logs/
+
+# Claude CLI credentials
+.claude/
+credentials.json

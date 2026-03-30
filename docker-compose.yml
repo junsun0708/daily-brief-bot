@@ -7,5 +7,6 @@ services:
       - .env
     environment:
       - TZ=Asia/Seoul
-    # Override command for one-shot execution:
-    # docker compose run --rm daily-brief-bot python -m src.main --now
+    volumes:
+      - ~/.claude:/root/.claude
+    user: root

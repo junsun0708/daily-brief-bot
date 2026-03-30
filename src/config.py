@@ -49,8 +49,6 @@ def load_config() -> Config:
         missing.append("SLACK_BOT_TOKEN")
     if not slack_channel_id:
         missing.append("SLACK_CHANNEL_ID")
-    if not anthropic_api_key:
-        missing.append("ANTHROPIC_API_KEY")
 
     if missing:
         raise EnvironmentError(
