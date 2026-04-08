@@ -50,7 +50,7 @@ def fetch_all_news() -> dict[NewsCategory, NewsBatch]:
     
     # Fetch social posts (Reddit, Twitter, Facebook + Korean communities) - 별도 카테고리로
     try:
-        social_items = fetch_social_posts(max_items=25)  # 각 소스당 5개씩
+        social_items = fetch_social_posts(max_items=10)
         results[NewsCategory.SOCIAL] = NewsBatch(category=NewsCategory.SOCIAL, items=social_items)
         logger.info("Fetched %d social posts", len(social_items))
     except Exception:
