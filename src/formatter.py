@@ -72,6 +72,18 @@ def format_briefing(content: BriefingContent) -> dict:
     blocks.append(_section_block(content.small_talk))
     blocks.append(_divider())
 
+    blocks.append(_section_block(f"*🎓 오늘의 상식*"))
+    blocks.append(_section_block(content.trivia))
+    blocks.append(_divider())
+
+    blocks.append(_section_block(f"*😂 오늘의 농담*"))
+    blocks.append(_section_block(content.joke))
+    blocks.append(_divider())
+
+    blocks.append(_section_block(f"*📖 오늘의 썰*"))
+    blocks.append(_section_block(content.story))
+    blocks.append(_divider())
+
     # Footer
     blocks.append(
         _context_block("🤖 _Daily Brief Bot — 매일 아침 자동 발송됩니다_")

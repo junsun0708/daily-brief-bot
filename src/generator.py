@@ -1,15 +1,11 @@
-"""LLM-based content generator for briefing.
+"""LLM-based content generator for briefing."""
 
-Uses Claude CLI (subscription) or Anthropic API:
-1. Summarize news items per category (Korean)
-2. Generate 일상주제 (daily lifestyle topic)
-3. Generate 스몰토크 (small talk conversation starter)
-"""
 from __future__ import annotations
 
 import json
 import logging
 import os
+import random
 import subprocess
 from dataclasses import dataclass
 from datetime import datetime
@@ -20,6 +16,28 @@ from src.news.base import NewsBatch, NewsCategory
 logger = logging.getLogger(__name__)
 
 
+TRIVIA_FACTS = [
+    "다리가 2개인 사람이 전 세계에서 약 10%밖에 없다고 합니다. 그래서 엘리베이터에서 만지면 행운이 온대요!",
+    "한국에서는 쌀이主食이지만 일본에서는 빵이主食 이에요. 하지만 한국 사람들이 일본에서寿司를 더 좋아한다고 하네요.",
+    "손을 비비는 것만으로도 불안감을 줄일 수 있어요. 신경과학에서 확인했대요.",
+    "하품은 뇌를 냉각시켜주는 역할을 합니다. 그래서 하품이 떠올라하면 더 집중되는 거예요.",
+    "하루에 평균 6~8개의 꿈을 꾸지만 대부분 기억 못한다고 합니다. 그래도 좋은 꿈꾸면 기분이 좋아요.",
+]
+
+FUN_JOKES = [
+    "왜 피곤한 사람이工作效率이 높을까요? 왜냐하면 일하면 피곤해지는 법!",
+    "어제 저녁에 가장 강한 음식을 먹었는데...바로 오뎅이야! 차갑지만 따듯한 마음이 떠올라서 추천해요.",
+    "회사에서 내 위치가 어디인지 알려달라고 했더니... 바로 컴퓨터 앞이래요!",
+    "친구가 나한테 물었어, '가장 가까운 별이 어디야?' 답은 바로 네 눈이야! 내가 바로 너의 별이니까.",
+    "다음에 한국 가면 어디 가야 해? 바로 남대문시장! 남대문에 다 있어.",
+]
+
+COOL_STORIES = [
+    "한번 회사에 지각했는데, 마침 사장님도 늦게 오셨습니다. 서로 눈치 보면서 같이 커피 마시다가... 그대로 사장님이랑 커피 타임이 되었습니다. 오히려 좋은 인연이 됐어요!",
+    "처음 해외 여행 갔을 때, 현지어로 택시 물어봤는데 제대로听不懂 못했어요. 그래서 핸드폰 지도 보여줬더니 그냥 저도 모르는 표정이었죠. 결국 걸어서 호텔 찾았는데그 방법으로居然 3시간 걸렸습니다. 하지만 그 길에서 제일 맛있는 길거리 음식도 먹고, 정말 아름다운 추억이 되었습니다!",
+]
+
+
 @dataclass
 class BriefingContent:
     date: str
@@ -27,6 +45,9 @@ class BriefingContent:
     daily_topic: str
     small_talk: str
     greeting: str
+    trivia: str
+    joke: str
+    story: str
 
 
 SYSTEM_PROMPT = """당신은 매일 아침 브리핑을 전달하는 친근하고 전문적인 한국어 뉴스 큐레이터입니다.
@@ -69,7 +90,7 @@ SMALL_TALK_PROMPT = """오늘은 {date} ({weekday})입니다.
 동료와 나눌 수 있는 스몰토크 주제를 하나 만들어주세요.
 
 규칙:
-- 다음 중 무작위로 하나 선택: 음식/취미/문화/트렌드/여행/영화/스포츠/책/게임/가전/패션/건강/경제/직장/*
+- 다음 중 무작위로 하나 선택: 음식/취미/문화/트렌드/여행/영화/스포츠/책/게임/가전/패션/건강/경제/직장
 - 선택한 주제에 대해 구체적이고 독특한 내용 포함
 - 질문 형태로 끝나면 좋음
 - 2~3문장
@@ -148,7 +169,6 @@ Respond with JSON only in this format:
             
             output = result.stdout.strip()
             
-            # JSON 코드블록 제거
             if "```json" in output:
                 output = output.split("```json")[1].split("```")[0]
             elif "```" in output:
@@ -194,7 +214,7 @@ Respond with JSON only in this format:
 
     def summarize_news(self, batch: NewsBatch) -> str:
         if not batch.items:
-            return "오늘은 해당 카테고리의 뉴스를 가져오지 못했어요 😅"
+            return "오늘은 해당 지역의 뉴스를 가져오지 못했어요."
         prompt = NEWS_SUMMARY_PROMPT.format(
             category_name=batch.display_name,
             news_items=_format_news_for_prompt(batch),
@@ -256,6 +276,10 @@ Respond with JSON only in this format:
         
         small_talk = self.generate_small_talk(now)
 
+        trivia = random.choice(TRIVIA_FACTS)
+        joke = random.choice(FUN_JOKES)
+        story = random.choice(COOL_STORIES)
+
         logger.info("Briefing generation complete")
 
         return BriefingContent(
@@ -264,4 +288,7 @@ Respond with JSON only in this format:
             daily_topic=daily_topic,
             small_talk=small_talk,
             greeting=greeting,
+            trivia=trivia,
+            joke=joke,
+            story=story,
         )
