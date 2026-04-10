@@ -62,7 +62,7 @@ NEWS_SUMMARY_PROMPT = """다음은 오늘의 {category_name} 뉴스 목록입니
 - 각 뉴스는 한 줄로 요약 (제목 + 핵심 내용)
 - 불릿 포인트(•) 사용
 - 중요도 순으로 정렬
-- 원문 URL이 있으면 괄호 안에 포함
+- 원문 URL이 있으면 줄바꿈 후 별도 줄에 표시 (예: 내용\n링크)
 - 한국어로 작성 (영문 뉴스도 번역)
 - JSON이나 코드블록 없이 일반 텍스트로만 응답
 
@@ -145,47 +145,39 @@ class BriefingGenerator:
             self._text_block = TextBlock
 
     def _chat_via_cli(self, user_prompt: str) -> str:
-        prompt = f"""System: {SYSTEM_PROMPT}
-
-User: {user_prompt}
-
-Respond with JSON only in this format:
-{{
-    "response": "your response here"
-}}"""
+        prompt = f"System: {SYSTEM_PROMPT}\n\nUser: {user_prompt}"
 
         try:
             result = subprocess.run(
-                ["claude", "-p", "--output-format", "json"],
+                ["claude", "-p", "--output-format", "text"],
                 input=prompt,
                 capture_output=True,
                 text=True,
                 timeout=120
             )
-            
+
             if result.returncode != 0:
                 logger.error(f"Claude CLI error: {result.stderr}")
                 return "Claude CLI 오류가 발생했습니다."
-            
+
             output = result.stdout.strip()
-            
-            if "```json" in output:
-                output = output.split("```json")[1].split("```")[0]
-            elif "```" in output:
-                output = output.split("```")[1].split("```")[0]
-            
-            try:
-                parsed = json.loads(output)
-                result_data = parsed.get("result", "")
-                
+
+            # JSON 블록이 포함된 경우 텍스트 부분만 추출
+            if output.startswith("{") or output.startswith("```"):
                 try:
-                    result_json = json.loads(result_data)
-                    return result_json.get("response", result_data)
-                except json.JSONDecodeError:
-                    return result_data
-            except json.JSONDecodeError:
-                return output
-                
+                    cleaned = output
+                    if "```json" in cleaned:
+                        cleaned = cleaned.split("```json")[1].split("```")[0]
+                    elif "```" in cleaned:
+                        cleaned = cleaned.split("```")[1].split("```")[0]
+                    parsed = json.loads(cleaned)
+                    if isinstance(parsed, dict) and "response" in parsed:
+                        return parsed["response"]
+                except (json.JSONDecodeError, IndexError):
+                    pass
+
+            return output
+
         except subprocess.TimeoutExpired:
             return "Claude CLI timeout"
         except Exception as e:
