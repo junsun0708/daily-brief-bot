@@ -241,7 +241,7 @@ Respond with JSON only in this format:
     def generate_small_talk(self, date: datetime) -> str:
         date_str = date.strftime("%Y년 %m월 %d일")
         weekday = WEEKDAY_NAMES[date.weekday()]
-        return self._chat(SMALL_TALK_PROMPT.format(date=f"{date_str} {weekday}"))
+        return self._chat(SMALL_TALK_PROMPT.format(date=date_str, weekday=weekday))
 
     def generate_greeting(self, date: datetime) -> str:
         date_str = date.strftime("%Y년 %m월 %d일")
