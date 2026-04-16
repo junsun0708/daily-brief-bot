@@ -28,7 +28,7 @@ def fetch_ranking_news(max_items: int = 5) -> list[NewsItem]:
             timeout=REQUEST_TIMEOUT,
         )
         response.raise_for_status()
-        response.encoding = 'euc-kr'
+        response.encoding = 'utf-8'
         
         soup = BeautifulSoup(response.text, 'html.parser')
         

@@ -21,7 +21,7 @@ class Config:
     slack_bot_token: str
     slack_channel_id: str
     anthropic_api_key: str
-    anthropic_model: str = "claude-sonnet-4-20250514"
+    anthropic_model: str = "claude-sonnet-4-6"
     send_time: str = "08:00"
     timezone: str = "Asia/Seoul"
     news_api_key: str | None = None
@@ -60,7 +60,7 @@ def load_config() -> Config:
         slack_bot_token=slack_bot_token,
         slack_channel_id=slack_channel_id,
         anthropic_api_key=anthropic_api_key,
-        anthropic_model=os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-20250514"),
+        anthropic_model=os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-6"),
         send_time=os.environ.get("SEND_TIME", "08:00"),
         timezone=os.environ.get("TIMEZONE", "Asia/Seoul"),
         news_api_key=os.environ.get("NEWS_API_KEY"),

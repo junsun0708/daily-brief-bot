@@ -24,11 +24,12 @@ def fetch_all_news() -> dict[NewsCategory, NewsBatch]:
         NewsCategory.WORLD: fetch_world_news,
         NewsCategory.TECH: fetch_tech_news,
         NewsCategory.RANKING: fetch_ranking_news,
+        NewsCategory.SOCIAL: lambda: fetch_social_posts(max_items=10),
     }
 
     results: dict[NewsCategory, NewsBatch] = {}
 
-    with ThreadPoolExecutor(max_workers=4) as executor:
+    with ThreadPoolExecutor(max_workers=5) as executor:
         future_to_category = {
             executor.submit(fn): category
             for category, fn in fetchers.items()
@@ -47,14 +48,5 @@ def fetch_all_news() -> dict[NewsCategory, NewsBatch]:
             except Exception:
                 logger.error("Failed to fetch %s", category.value, exc_info=True)
                 results[category] = NewsBatch(category=category, items=[])
-    
-    # Fetch social posts (Reddit, Twitter, Facebook + Korean communities) - 별도 카테고리로
-    try:
-        social_items = fetch_social_posts(max_items=10)
-        results[NewsCategory.SOCIAL] = NewsBatch(category=NewsCategory.SOCIAL, items=social_items)
-        logger.info("Fetched %d social posts", len(social_items))
-    except Exception:
-        logger.warning("Failed to fetch social posts", exc_info=True)
-        results[NewsCategory.SOCIAL] = NewsBatch(category=NewsCategory.SOCIAL, items=[])
 
     return results

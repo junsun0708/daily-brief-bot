@@ -42,20 +42,20 @@ def fetch_reddit_posts(max_items: int = 5) -> list[NewsItem]:
                         summary=f"👍 {score} • 💬 {num_comments}",
                         url=url,
                         source=f"r/{subreddit}",
-                        category=NewsCategory.RANKING,
+                        category=NewsCategory.SOCIAL,
                     )
                 )
-                
+
     except Exception:
         logger.warning("Failed to fetch Reddit posts", exc_info=True)
-    
+
     return items
 
 
 def fetch_facebook_trending(max_items: int = 5) -> list[NewsItem]:
     """Fetch trending topics from Facebook."""
     items: list[NewsItem] = []
-    
+
     try:
         # Facebook trending page (public)
         response = requests.get(
@@ -65,12 +65,12 @@ def fetch_facebook_trending(max_items: int = 5) -> list[NewsItem]:
             },
             timeout=REQUEST_TIMEOUT,
         )
-        
+
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, 'html.parser')
             # Facebook often blocks scraping, fallback to meta tags
             titles = soup.select('meta[property="og:title"]')
-            
+
             for meta in titles[:max_items]:
                 content = meta.get("content", "")
                 if content and len(content) > 10:
@@ -80,7 +80,7 @@ def fetch_facebook_trending(max_items: int = 5) -> list[NewsItem]:
                             summary="Facebook 인기 주제",
                             url="https://www.facebook.com/trending/",
                             source="Facebook",
-                            category=NewsCategory.RANKING,
+                            category=NewsCategory.SOCIAL,
                         )
                     )
                     
@@ -121,7 +121,7 @@ def fetch_twitter_posts(max_items: int = 5) -> list[NewsItem]:
                                     summary="Twitter/X 트렌드",
                                     url=f"{instance}/explore",
                                     source="Twitter/X",
-                                    category=NewsCategory.RANKING,
+                                    category=NewsCategory.SOCIAL,
                                 )
                             )
                     break
@@ -160,7 +160,7 @@ def fetch_dcinside(max_items: int = 5) -> list[NewsItem]:
                                 summary=f"디시인사이드 {gallery}",
                                 url=f"https://gall.dcinside.com/board/lists/?id={gallery}",
                                 source="디시인사이드",
-                                category=NewsCategory.RANKING,
+                                category=NewsCategory.SOCIAL,
                             )
                         )
         except Exception:
@@ -190,10 +190,10 @@ def fetch_fmkorea(max_items: int = 5) -> list[NewsItem]:
                     items.append(
                         NewsItem(
                             title=text[:100],
-                            summary="에펨 hot",
+                            summary="에펨코리아 인기글",
                             url=f"https://www.fmkorea.com{href}" if href else "https://www.fmkorea.com/hot",
-                            source="에펨",
-                            category=NewsCategory.RANKING,
+                            source="에펨코리아",
+                            category=NewsCategory.SOCIAL,
                         )
                     )
     except Exception:
@@ -222,10 +222,10 @@ def fetch_opentalk(max_items: int = 5) -> list[NewsItem]:
                     items.append(
                         NewsItem(
                             title=text[:100],
-                            summary="오피스타热门话题",
+                            summary="오픈톡 인기 주제",
                             url="https://www.opentalk.org/ranking",
-                            source="오피스타",
-                            category=NewsCategory.RANKING,
+                            source="오픈톡",
+                            category=NewsCategory.SOCIAL,
                         )
                     )
     except Exception:
@@ -258,7 +258,7 @@ def fetch_ruliweb(max_items: int = 5) -> list[NewsItem]:
                             summary="루리웹 베스트",
                             url=f"https://m.ruliweb.com{href}" if href else "https://m.ruliweb.com/best/hit",
                             source="루리웹",
-                            category=NewsCategory.RANKING,
+                            category=NewsCategory.SOCIAL,
                         )
                     )
     except Exception:
@@ -287,10 +287,10 @@ def fetch_natepann(max_items: int = 5) -> list[NewsItem]:
                     items.append(
                         NewsItem(
                             title=text[:100],
-                            summary="네이트판热门话题",
+                            summary="네이트판 인기글",
                             url="https://pann.nate.com/hot",
                             source="네이트판",
-                            category=NewsCategory.RANKING,
+                            category=NewsCategory.SOCIAL,
                         )
                     )
     except Exception:
